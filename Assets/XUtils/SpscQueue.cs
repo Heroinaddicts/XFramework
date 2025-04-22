@@ -51,8 +51,8 @@ namespace XUtils
         private volatile Buffer _Buffer;
 
 
-        private Index _ReadIndex;
-        private Index _WriteIndex;
+        private Index _ReadIndex = new Index();
+        private Index _WriteIndex = new Index();
 
         public SPSCQueue(int initialSize = 16)
         {
@@ -106,7 +106,7 @@ namespace XUtils
         {
             lock(_ReadIndex)
             {
-                // Ö»ÔÊÐíµ¥Éú²úÕßµ÷ÓÃ£¬Òò´Ë²»ÐèÒªËø
+                // Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½ï¿½Ã£ï¿½ï¿½ï¿½Ë²ï¿½ï¿½ï¿½Òªï¿½ï¿½
                 int oldSize = oldBuffer._Size;
                 int newSize = oldSize * 2;
                 Buffer newBuffer = new Buffer(newSize);
@@ -120,7 +120,7 @@ namespace XUtils
                     newBuffer._Slots[newIndex]._Sign = oldBuffer._Slots[oldIndex]._Sign;
                 }
 
-                // Ìæ»» buffer£¬Ïû·ÑÕß¿´µ½ÐÂ buffer ºó×ÔÈ»¼ÌÐø¶ÁÈ¡
+                // ï¿½æ»» bufferï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¿ï¿½ï¿½ï¿½ï¿½ï¿½ buffer ï¿½ï¿½ï¿½ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡
                 _Buffer = newBuffer;
             }
         }

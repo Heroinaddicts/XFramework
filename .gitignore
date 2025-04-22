@@ -12,3 +12,7 @@ Assets/PolygonFantasyKingdom
 Assets/PolygonFantasyKingdom/
 obj
 obj/
+.DS_Store
+/.vscode
+/obj
+obj/Debug/Assembly-CSharp.csproj.AssemblyReference.cache
