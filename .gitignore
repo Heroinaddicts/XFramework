@@ -8,3 +8,7 @@ Logs/*
 Temp/*
 *.csproj
 *.sln
+Assets/PolygonFantasyKingdom
+Assets/PolygonFantasyKingdom/
+obj
+obj/

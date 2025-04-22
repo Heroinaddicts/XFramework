@@ -12,6 +12,6 @@ public class Core : MonoSingleton<Core>
     // Update is called once per frame
     void Update()
     {
-        //Api.GetNetwork().Update();
+        Api.GetNetwork().Update();
     }
 }

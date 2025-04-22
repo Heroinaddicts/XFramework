@@ -3,11 +3,28 @@ using System.Threading;
 
 namespace XUtils
 {
-    public class SpscQueue<T>
+    public class SPSCQueue<T>
     {
         private const int ConstNoData = 0;
         private const int ConstHasData = 1;
         private const int ConstExpanding = 2;
+        public class Index
+        {
+            public int _Index;
+            public static implicit operator Index(int v)
+            {
+                return new Index { _Index = v };
+            }
+            public static implicit operator int(Index f)
+            {
+                return f._Index;
+            }
+            public static Index operator ++(Index f)
+            {
+                f._Index++;
+                return f;
+            }
+        }
 
         private class QueueSlot
         {
@@ -33,10 +50,11 @@ namespace XUtils
 
         private volatile Buffer _Buffer;
 
-        private int _ReadIndex;
-        private int _WriteIndex;
 
-        public SpscQueue(int initialSize = 16)
+        private Index _ReadIndex;
+        private Index _WriteIndex;
+
+        public SPSCQueue(int initialSize = 16)
         {
             if ((initialSize & (initialSize - 1)) != 0)
                 throw new ArgumentException("Initial size must be a power of 2");
@@ -44,58 +62,67 @@ namespace XUtils
             _Buffer = new Buffer(initialSize);
         }
 
-        public void Enqueue(T item)
+        public void Push(T item)
         {
-            Buffer buffer = _Buffer;
-            int index = _WriteIndex & buffer._Mask;
-
-            if (buffer._Slots[index]._Sign != ConstNoData)
+            lock(_WriteIndex)
             {
-                Expand(buffer);
-                buffer = _Buffer;
-                index = _WriteIndex & buffer._Mask;
-            }
+                Buffer buffer = _Buffer;
+                int index = _WriteIndex & buffer._Mask;
 
-            buffer._Slots[index]._Data = item;
-            Volatile.Write(ref buffer._Slots[index]._Sign, ConstHasData);
-            _WriteIndex++;
+                if (buffer._Slots[index]._Sign != ConstNoData)
+                {
+                    Expand(buffer);
+                    buffer = _Buffer;
+                    index = _WriteIndex & buffer._Mask;
+                }
+
+                buffer._Slots[index]._Data = item;
+                Volatile.Write(ref buffer._Slots[index]._Sign, ConstHasData);
+                _WriteIndex++;
+            }
         }
 
-        public bool TryDequeue(out T item)
+        public bool Pull(out T item)
         {
-            Buffer buffer = _Buffer;
-            int index = _ReadIndex & buffer._Mask;
-
-            if (Volatile.Read(ref buffer._Slots[index]._Sign) != ConstHasData)
+            lock(_ReadIndex)
             {
-                item = default;
-                return false;
-            }
+                Buffer buffer = _Buffer;
+                int index = _ReadIndex & buffer._Mask;
 
-            item = buffer._Slots[index]._Data;
-            Volatile.Write(ref buffer._Slots[index]._Sign, ConstNoData);
-            _ReadIndex++;
-            return true;
+                if (Volatile.Read(ref buffer._Slots[index]._Sign) != ConstHasData)
+                {
+                    item = default;
+                    return false;
+                }
+
+                item = buffer._Slots[index]._Data;
+                Volatile.Write(ref buffer._Slots[index]._Sign, ConstNoData);
+                _ReadIndex++;
+                return true;
+            }
         }
 
         private void Expand(Buffer oldBuffer)
         {
-            // 只允许单生产者调用，因此不需要锁
-            int oldSize = oldBuffer._Size;
-            int newSize = oldSize * 2;
-            Buffer newBuffer = new Buffer(newSize);
-
-            for (int i = _ReadIndex; i < _WriteIndex; i++)
+            lock(_ReadIndex)
             {
-                int oldIndex = i & oldBuffer._Mask;
-                int newIndex = i & newBuffer._Mask;
+                // 只允许单生产者调用，因此不需要锁
+                int oldSize = oldBuffer._Size;
+                int newSize = oldSize * 2;
+                Buffer newBuffer = new Buffer(newSize);
 
-                newBuffer._Slots[newIndex]._Data = oldBuffer._Slots[oldIndex]._Data;
-                newBuffer._Slots[newIndex]._Sign = oldBuffer._Slots[oldIndex]._Sign;
+                for (int i = _ReadIndex; i < _WriteIndex; i++)
+                {
+                    int oldIndex = i & oldBuffer._Mask;
+                    int newIndex = i & newBuffer._Mask;
+
+                    newBuffer._Slots[newIndex]._Data = oldBuffer._Slots[oldIndex]._Data;
+                    newBuffer._Slots[newIndex]._Sign = oldBuffer._Slots[oldIndex]._Sign;
+                }
+
+                // 替换 buffer，消费者看到新 buffer 后自然继续读取
+                _Buffer = newBuffer;
             }
-
-            // 替换 buffer，消费者看到新 buffer 后自然继续读取
-            _Buffer = newBuffer;
         }
 
         public int Count => _WriteIndex - _ReadIndex;
