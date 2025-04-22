@@ -13,15 +13,15 @@ namespace XEngine {
     class Network : Api.iNetwork
     {
         SPSCQueue<int> _Queue = new SPSCQueue<int>();
-        UInt64 s_GuidOffset = RandomGeneratorUInt64.RandomUInt64();
         SPSCQueue<NetEvent> _EventQueue = new SPSCQueue<NetEvent>();
 
-        public void PushEvent(eTcpEvent ev, iTcpSocket s, int code)
+        public void PushEvent(eTcpEvent ev, iTcpSocket s, int code, Socket sock = null)
         {
             var e = NetDefine.s_EventPool.Get();
             e._Type = ev;
             e._S = s;
             e._Code = code;
+            e._Socket = sock;
 
             _EventQueue.Push(e);
         }
@@ -41,7 +41,7 @@ namespace XEngine {
 
                 foreach (var addr in addrs)
                 {
-                    // Ö»³¢ÊÔ InterNetwork (IPv4) »ò InterNetworkV6 (IPv6)
+                    // Ö»ï¿½ï¿½ï¿½ï¿½ InterNetwork (IPv4) ï¿½ï¿½ InterNetworkV6 (IPv6)
                     if (addr.AddressFamily != AddressFamily.InterNetwork &&
                         addr.AddressFamily != AddressFamily.InterNetworkV6)
                         continue;
@@ -57,7 +57,7 @@ namespace XEngine {
                             try
                             {
                                 s.EndConnect(ar);
-                                TcpConnection con = TcpConnection.Create(s, s_GuidOffset++, this);
+                                TcpConnection con = TcpConnection.Create(s, NetGUID.Generator(), this);
                                 if (null != con)
                                 {
                                     ev._Code = NetDefine.CODE_SUCCESS;
@@ -80,7 +80,7 @@ namespace XEngine {
                     }
                     catch(Exception ex)
                     {
-                        Api.Trace($"BeginConnect µ½ {remoteEP} Ê§°Ü: {ex.Message}");
+                        Api.Trace($"BeginConnect ï¿½ï¿½ {remoteEP} Ê§ï¿½ï¿½: {ex.Message}");
                     }
                 }
             }catch (SocketException ex)
@@ -140,6 +140,11 @@ namespace XEngine {
                         {
 
                         }
+                        break;
+                    case eTcpEvent.Accept: 
+                        {
+                            
+                        }   
                         break;
                     default:
                         break;

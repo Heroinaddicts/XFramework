@@ -1,9 +1,18 @@
 using System;
+using System.Net.Sockets;
 using XUtils;
 using static XEngine.Api.iNetwork;
 
 namespace XEngine
 {
+    static class NetGUID {
+        static UInt64 _GuidOffset = RandomGeneratorUInt64.RandomUInt64();
+
+        public static UInt64 Generator() {
+            return _GuidOffset ++;
+        }
+    }
+
     static class NetDefine
     {
         public enum eTcpEvent
@@ -23,6 +32,7 @@ namespace XEngine
         {
             public eTcpEvent _Type;
             public iTcpSocket _S;
+            public Socket _Socket;
             public int _Code;
             public Action<iTcpConnection> _CRet;
             public Action<iTcpServer> _SRet;

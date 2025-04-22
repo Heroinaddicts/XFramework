@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
+using Codice.CM.Common;
 using UnityEngine;
 using XUtils;
 using static PlasticPipe.PlasticProtocol.Client.ConnectionCreator.PlasticProtoSocketConnection;
@@ -20,6 +23,8 @@ namespace XEngine
             },
             16
         );
+
+        static IDictionary<UInt64, TcpConnection> s_Dictionary = new Dictionary<UInt64, TcpConnection>();
 
         Socket _Socket;
         UInt64 _Guid;
@@ -49,6 +54,7 @@ namespace XEngine
 
             if (con.Initialize())
             {
+                s_Dictionary.Add(guid, con);
                 return con;
             }
             s.Close();
@@ -58,10 +64,16 @@ namespace XEngine
 
         public static void Release(TcpConnection con)
         {
+            s_Dictionary.Remove(con.Guid);
+
             con.ReleaseSocket();
             con._Guid = 0;
             con._Network = null;
             s_Pool.Return(con);
+        }
+
+        public static TcpConnection Query(UInt64 guid) {
+            return s_Dictionary[guid];
         }
 
         private TcpConnection() {}
@@ -122,7 +134,7 @@ namespace XEngine
                         _Network.PushEvent(eTcpEvent.Disconnect, this, CODE_UNKNOWN);
                     }
                 }
-                // 连接关闭
+                // 锟斤拷锟接关憋拷
                 Api.Trace($"Connection {_Guid} closed");
             }
         }
