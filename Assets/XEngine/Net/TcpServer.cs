@@ -68,8 +68,6 @@ class TcpServer : Api.iNetwork.iTcpServer
             Api.Error(e.Message);
             return false;
         }
-
-        return false;
     }
 
     bool AsyncAccept() {
@@ -90,6 +88,24 @@ class TcpServer : Api.iNetwork.iTcpServer
             Api.Error(e.Message);
         } finally {
             AsyncAccept();
+        }
+    }
+
+    public void OnAccept(Socket sock)
+    {
+        if (sock == null)
+        {
+            Api.Error("TcpServer::OnAccept socket is null");
+            return;
+        }
+
+        TcpConnection con = TcpConnection.Create(sock, NetGUID.Generator(), _Network);
+        if (con != null && _AcceptCallback != null)
+        {
+            _AcceptCallback(this, con);
+        } else
+        {
+            sock.Close();
         }
     }
 

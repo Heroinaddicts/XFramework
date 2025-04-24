@@ -10,37 +10,31 @@ public class InitScene : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        Api.iNetwork.iTcpServer ts = Api.GetNetwork().LaunchTcpServer("0.0.0.0", 12345);
+        ts.SetOnConnectionCallback((Api.iNetwork.iTcpServer server, Api.iNetwork.iTcpConnection con) =>
+        {
+            Debug.Log($"TcpConnection {con.Guid} OnConnection");
+            con.SetReceiveCallback((Api.iNetwork.iTcpConnection c, byte[] data, int offset, int size) =>
+            {
+                Debug.Log("OnReceive");
+                return 0;
+            });
+
+            con.SetDisconnectCallback((Api.iNetwork.iTcpConnection c) =>
+            {
+                Debug.Log($"TcpConnection {c.Guid} OnDisconnect");
+            });
+        });
     }
 
     // Update is called once per frame
     void Update()
     {
-        Api.GetNetwork().CreateTcpConnection("baidu.com", 80, (con) =>
+        Api.GetNetwork().CreateTcpConnection("127.0.0.1", 23456, (Api.iNetwork.iTcpConnection con) =>
         {
             if (null != con)
             {
-                con.SetConnectCallback((bool success, Api.iNetwork.iTcpConnection c) =>
-                {
-                    if (success)
-                    {
-                        _LastValue++;
-                        Api.GetLog().Debug($"CreateTcpConnection {c.Guid} success, connection count {_LastValue}");
-                    }
-                    else
-                    {
-                        Api.GetLog().Error("CreateTcpConnection failed");
-                    }
-                });
-
-                con.SetDisconnectCallback((Api.iNetwork.iTcpConnection c) =>
-                {
-                    _LastValue--;
-                    Api.GetLog().Trace($"Connection {c.Guid} Disconnected, connection count {_LastValue}");
-                });
-            }
-            else
-            {
-                Api.GetLog().Error("CreateTcpConnection failed");
+                Debug.Log($"TcpConnection {con.Guid} OnConnect");
             }
         });
     }

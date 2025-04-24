@@ -134,14 +134,13 @@ namespace XEngine
                         _Network.PushEvent(eTcpEvent.Disconnect, this, CODE_UNKNOWN);
                     }
                 }
-                // ���ӹر�
                 Api.Trace($"Connection {_Guid} closed");
             }
         }
 
         public void Close()
         {
-            _Socket.Close();
+            ReleaseSocket();
         }
 
         public void Send(byte[] data, int offset, int size)

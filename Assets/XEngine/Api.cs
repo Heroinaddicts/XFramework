@@ -31,7 +31,7 @@ namespace XEngine
 
             public T Query<T>(int guid) where T : iTcpSocket;
             public void CreateTcpConnection(string host, int port, Action<iTcpConnection> ret);
-            public void LaunchTcpServer(string host, int port, Action<iTcpServer> ret);
+            public iTcpServer LaunchTcpServer(string host, int port);
 
             public void Pause();
             public void Resume();

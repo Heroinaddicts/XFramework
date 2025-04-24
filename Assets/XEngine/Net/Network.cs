@@ -14,7 +14,7 @@ namespace XEngine {
     {
         SPSCQueue<int> _Queue = new SPSCQueue<int>();
         SPSCQueue<NetEvent> _EventQueue = new SPSCQueue<NetEvent>();
-
+        bool _Pause = false;
         public void PushEvent(eTcpEvent ev, iTcpSocket s, int code, Socket sock = null)
         {
             var e = NetDefine.s_EventPool.Get();
@@ -41,7 +41,6 @@ namespace XEngine {
 
                 foreach (var addr in addrs)
                 {
-                    // ֻ���� InterNetwork (IPv4) �� InterNetworkV6 (IPv6)
                     if (addr.AddressFamily != AddressFamily.InterNetwork &&
                         addr.AddressFamily != AddressFamily.InterNetworkV6)
                         continue;
@@ -92,30 +91,28 @@ namespace XEngine {
             }
         }
 
-        public void LaunchTcpServer(string host, int port, Action<iTcpServer> ret)
+        public iTcpServer LaunchTcpServer(string host, int port)
         {
-            throw new System.NotImplementedException();
+            return TcpServer.Create(NetGUID.Generator(), host, port, this);
         }
 
         public void Pause()
         {
-            throw new System.NotImplementedException();
+            _Pause = true;
+        }
+        public void Resume()
+        {
+            _Pause = false;
         }
 
         public T Query<T>(int guid) where T : Api.iNetwork.iTcpSocket
         {
             throw new System.NotImplementedException();
         }
-
-        public void Resume()
-        {
-            throw new System.NotImplementedException();
-        }
-
         public void Update()
         {
             NetEvent ev = null;
-            while(_EventQueue.Pull(out ev))
+            while(!_Pause && _EventQueue.Pull(out ev))
             {
                 switch(ev._Type)
                 {
@@ -143,7 +140,8 @@ namespace XEngine {
                         break;
                     case eTcpEvent.Accept: 
                         {
-                            
+                            TcpServer ts = (ev._S as TcpServer);
+                            ts.OnAccept(ev._Socket);
                         }   
                         break;
                     default:
